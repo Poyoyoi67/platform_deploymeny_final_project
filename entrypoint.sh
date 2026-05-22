@@ -3,12 +3,12 @@ set -e
 
 echo "Starting Container"
 
-# Wait for database with timeout
+# Wait for MySQL using a simple TCP check instead of php console
 MAX_TRIES=30
 COUNT=0
 
 echo "Waiting for database to be ready..."
-until php bin/console doctrine:query:sql "SELECT 1" > /dev/null 2>&1; do
+until nc -z "$MYSQLHOST" "$MYSQLPORT" 2>/dev/null; do
     COUNT=$((COUNT + 1))
     if [ $COUNT -ge $MAX_TRIES ]; then
         echo "Database timeout - starting anyway..."
