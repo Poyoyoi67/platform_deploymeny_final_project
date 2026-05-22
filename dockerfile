@@ -24,6 +24,7 @@ RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
 COPY nginx-main.conf /etc/nginx/nginx.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker-php-fpm.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
