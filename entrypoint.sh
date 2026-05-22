@@ -57,11 +57,15 @@ mkdir -p var/cache var/log
 chmod -R 777 var/
 
 PORT="${PORT:-8080}"
-echo "Configuring Nginx to listen on port ${PORT}..."
-sed -i "s/listen 80;/listen ${PORT};/" /etc/nginx/conf.d/default.conf
+echo "Configuring Nginx to listen on 0.0.0.0:${PORT}..."
+sed -i "s/listen 80;/listen 0.0.0.0:${PORT};/" /etc/nginx/conf.d/default.conf
 
 echo "Starting PHP-FPM..."
 php-fpm -D
 
-echo "Starting Nginx..."
+echo "Testing Nginx configuration..."
+nginx -t
+
+echo "Container is ready. Open your Railway URL (listening on port ${PORT})."
+echo "Nginx is running — new log lines appear when someone visits the site."
 exec nginx -g "daemon off;"
