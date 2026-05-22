@@ -1,10 +1,21 @@
 #!/bin/sh
 set -e
 
+echo "Starting Container"
+
+# Wait for database with timeout
+MAX_TRIES=30
+COUNT=0
+
 echo "Waiting for database to be ready..."
 until php bin/console doctrine:query:sql "SELECT 1" > /dev/null 2>&1; do
-  echo "Database not ready yet, retrying in 3 seconds..."
-  sleep 3
+    COUNT=$((COUNT + 1))
+    if [ $COUNT -ge $MAX_TRIES ]; then
+        echo "Database timeout - starting anyway..."
+        break
+    fi
+    echo "Database not ready yet, retrying in 3 seconds..."
+    sleep 3
 done
 
 echo "Running database migrations..."
@@ -20,4 +31,7 @@ echo "Fixing permissions..."
 chmod -R 777 var/
 
 echo "Starting PHP-FPM..."
-exec php-fpm
+php-fpm -D
+
+echo "Starting Nginx..."
+exec nginx -g "daemon off;"
