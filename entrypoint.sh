@@ -3,8 +3,10 @@ set -e
 
 echo "Starting Container"
 
-export APP_ENV="${APP_ENV:-prod}"
-export APP_DEBUG="${APP_DEBUG:-0}"
+# Always run in production (dev bundles are not installed with --no-dev).
+export APP_ENV=prod
+export APP_DEBUG=0
+echo "Running in APP_ENV=${APP_ENV}"
 
 # Railway may expose MYSQLUSER or MYSQL_USER (same for password/database).
 DB_HOST="${MYSQLHOST:-${MYSQL_HOST:-127.0.0.1}}"
@@ -17,6 +19,15 @@ if [ -z "$DATABASE_URL" ] && [ -n "$MYSQLHOST" ] && [ -n "$DB_USER" ]; then
     export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${MYSQLHOST}:${MYSQLPORT}/${DB_NAME}?serverVersion=8.0.32&charset=utf8mb4"
     echo "DATABASE_URL configured from Railway MySQL variables."
 fi
+
+# Runtime overrides (PHP-FPM does not inherit shell exports by default).
+{
+    echo "APP_ENV=prod"
+    echo "APP_DEBUG=0"
+    if [ -n "$DATABASE_URL" ]; then
+        echo "DATABASE_URL=${DATABASE_URL}"
+    fi
+} > .env.local
 
 MAX_TRIES=30
 COUNT=0
@@ -33,7 +44,7 @@ until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; do
 done
 
 echo "Running database migrations..."
-php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+php bin/console doctrine:migrations:migrate --env=prod --no-interaction --allow-no-migration
 
 echo "Clearing cache..."
 php bin/console cache:clear --env=prod --no-warmup

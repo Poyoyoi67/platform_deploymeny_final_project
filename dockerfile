@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2.7 /usr/bin/composer /usr/local/bin/composer
 
 ENV APP_ENV=prod
+ENV APP_DEBUG=0
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 COPY composer.json composer.lock ./
