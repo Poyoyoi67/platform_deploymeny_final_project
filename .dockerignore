@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env.local
+.env.*.local
+var/
+vendor/
+node_modules/
+.phpunit.cache/
+tests/
+compose-disable.yaml
+1-compose.override-disable.yaml
+docker-compose.yaml
+README.md

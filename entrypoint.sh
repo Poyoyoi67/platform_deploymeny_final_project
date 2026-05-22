@@ -3,12 +3,26 @@ set -e
 
 echo "Starting Container"
 
-# Wait for MySQL using a simple TCP check instead of php console
+export APP_ENV="${APP_ENV:-prod}"
+export APP_DEBUG="${APP_DEBUG:-0}"
+
+# Railway may expose MYSQLUSER or MYSQL_USER (same for password/database).
+DB_HOST="${MYSQLHOST:-${MYSQL_HOST:-127.0.0.1}}"
+DB_PORT="${MYSQLPORT:-${MYSQL_PORT:-3306}}"
+DB_USER="${MYSQLUSER:-${MYSQL_USER:-}}"
+DB_PASS="${MYSQLPASSWORD:-${MYSQL_PASSWORD:-}}"
+DB_NAME="${MYSQLDATABASE:-${MYSQL_DATABASE:-}}"
+
+if [ -z "$DATABASE_URL" ] && [ -n "$MYSQLHOST" ] && [ -n "$DB_USER" ]; then
+    export DATABASE_URL="mysql://${DB_USER}:${DB_PASS}@${MYSQLHOST}:${MYSQLPORT}/${DB_NAME}?serverVersion=8.0.32&charset=utf8mb4"
+    echo "DATABASE_URL configured from Railway MySQL variables."
+fi
+
 MAX_TRIES=30
 COUNT=0
 
-echo "Waiting for database to be ready..."
-until nc -z "$MYSQLHOST" "$MYSQLPORT" 2>/dev/null; do
+echo "Waiting for database to be ready at ${DB_HOST}:${DB_PORT}..."
+until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; do
     COUNT=$((COUNT + 1))
     if [ $COUNT -ge $MAX_TRIES ]; then
         echo "Database timeout - starting anyway..."
@@ -28,7 +42,12 @@ echo "Warming up cache..."
 php bin/console cache:warmup --env=prod
 
 echo "Fixing permissions..."
+mkdir -p var/cache var/log
 chmod -R 777 var/
+
+PORT="${PORT:-8080}"
+echo "Configuring Nginx to listen on port ${PORT}..."
+sed -i "s/listen 80;/listen ${PORT};/" /etc/nginx/conf.d/default.conf
 
 echo "Starting PHP-FPM..."
 php-fpm -D
