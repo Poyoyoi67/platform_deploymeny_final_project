@@ -2,7 +2,7 @@ services:
   platform_docker-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     container_name: lebplatform-app
     volumes:
       - .:/var/www/html
